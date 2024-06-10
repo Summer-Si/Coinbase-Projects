@@ -1,0 +1,57 @@
+version: '3'
+services:
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=coinbase_project.settings
+      - TZ=Europe/London
+    depends_on:
+      - db
+      - redis
+
+  celery:
+    build: .
+    command: celery -A coinbase_project worker --loglevel=info
+    volumes:
+      - .:/app
+    environment:
+      - DJANGO_SETTINGS_MODULE=coinbase_project.settings
+      - TZ=Europe/London
+    depends_on:
+      - db
+      - redis
+
+  celery-beat:
+    build: .
+    command: celery -A coinbase_project beat --loglevel=info
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DJANGO_SETTINGS_MODULE=coinbase_project.settings
+      - TZ=Europe/London
+  db:
+     image: postgres
+     environment:
+       - POSTGRES_DB=coinbase_db
+       - POSTGRES_USER=postgres
+       - POSTGRES_PASSWORD=root
+       - TZ=Europe/London
+     volumes:
+       - postgres_data:/var/lib/postgresql/data
+     ports:
+       - "5432:5432"
+
+  redis:
+     image: redis
+     environment:
+       - TZ=Europe/London
+volumes:
+  postgres_data:
